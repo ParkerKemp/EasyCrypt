@@ -11,9 +11,8 @@ import java.security.SecureRandom;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
-//import java.util.Base64;
 
-public class EasyCrypt {
+public abstract class EasyCrypt {
 	public KeyPair generateKeys() throws NoSuchAlgorithmException {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("DSA");
         SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
@@ -21,8 +20,8 @@ public class EasyCrypt {
         return generator.generateKeyPair();
     }
 
-    public static PrivateKey loadPrivateKey(String key64) throws GeneralSecurityException {
-        byte[] clear = null;//Base64.getDecoder().decode(key64);
+    public PrivateKey loadPrivateKey(String key64) throws GeneralSecurityException {
+        byte[] clear = decode(key64);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(clear);
         KeyFactory fact = KeyFactory.getInstance("DSA");
         PrivateKey priv = fact.generatePrivate(keySpec);
@@ -30,29 +29,33 @@ public class EasyCrypt {
         return priv;
     }
 
-    public static PublicKey loadPublicKey(String stored) throws GeneralSecurityException {
-        byte[] data = null;//Base64.getDecoder().decode(stored);
+    public PublicKey loadPublicKey(String stored) throws GeneralSecurityException {
+        byte[] data = decode(stored);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
         KeyFactory fact = KeyFactory.getInstance("DSA");
         return fact.generatePublic(spec);
     }
 
-    public static String stringFromPrivateKey(PrivateKey priv) throws GeneralSecurityException {
+    public String stringFromPrivateKey(PrivateKey priv) throws GeneralSecurityException {
         KeyFactory fact = KeyFactory.getInstance("DSA");
         PKCS8EncodedKeySpec spec = fact.getKeySpec(priv,
                 PKCS8EncodedKeySpec.class);
         byte[] packed = spec.getEncoded();
-        String key64 = null;//Base64.getEncoder().encodeToString(packed);
+        String key64 = encode(packed);
 
         Arrays.fill(packed, (byte) 0);
         return key64;
     }
 
-    public static String stringFromPublicKey(PublicKey publ) throws GeneralSecurityException {
+    public String stringFromPublicKey(PublicKey publ) throws GeneralSecurityException {
 
         KeyFactory fact = KeyFactory.getInstance("DSA");
         X509EncodedKeySpec spec = fact.getKeySpec(publ,
                 X509EncodedKeySpec.class);
-        return null;//Base64.getEncoder().encodeToString(spec.getEncoded());
+        return encode(spec.getEncoded());
     }
+    
+    protected abstract byte[] decode(String str);
+    
+    protected abstract String encode(byte[] bytes);
 }
