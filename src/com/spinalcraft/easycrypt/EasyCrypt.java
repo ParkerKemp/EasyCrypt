@@ -19,6 +19,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 public abstract class EasyCrypt {
+	public static enum Algorithm {RSA, AES};
+	
 	public KeyPair generateKeys() throws NoSuchAlgorithmException {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
         SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
@@ -58,19 +60,42 @@ public abstract class EasyCrypt {
         return encode(spec.getEncoded());
     }
     
-    public byte[] encrypt(PublicKey key, byte[] plaintext) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException{
-        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
-        cipher.init(Cipher.ENCRYPT_MODE, key);
-        return cipher.doFinal(plaintext);
+    public String encrypt(PublicKey key, String plaintext, Algorithm algorithm){
+        Cipher cipher;
+		try {
+			cipher = Cipher.getInstance(getAlgorithm(algorithm));
+	        cipher.init(Cipher.ENCRYPT_MODE, key);
+	        return new String(cipher.doFinal(plaintext.getBytes()));
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException e) {
+			e.printStackTrace();
+		}
+		return null;
     }
 
-    public byte[] decrypt(PrivateKey key, byte[] ciphertext) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException{
-        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
-        cipher.init(Cipher.DECRYPT_MODE, key);
-        return cipher.doFinal(ciphertext);
+    public String decrypt(PrivateKey key, String ciphertext, Algorithm algorithm) {
+        Cipher cipher;
+		try {
+			cipher = Cipher.getInstance(getAlgorithm(algorithm));
+			cipher.init(Cipher.DECRYPT_MODE, key);
+	        return new String(cipher.doFinal(ciphertext.getBytes()));
+	    } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+			e.printStackTrace();
+		}
+        return null;
     }
     
     protected abstract byte[] decode(String str);
     
     protected abstract String encode(byte[] bytes);
+    
+    private String getAlgorithm(Algorithm algo){
+    	switch(algo){
+    	case RSA:
+    		return "RSA/ECB/OAEPWithSHA1AndMGF1Padding";
+    	case AES:
+    		return "AES/CBC/PKCS5Padding";
+    	default:
+    		return "AES/CBC/PKCS5Padding";
+    	}
+    }
 }
