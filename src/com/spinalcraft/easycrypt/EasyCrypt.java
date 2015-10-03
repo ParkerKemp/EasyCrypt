@@ -16,7 +16,7 @@ public abstract class EasyCrypt {
 	public KeyPair generateKeys() throws NoSuchAlgorithmException {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("DSA");
         SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-        generator.initialize(256, random);
+        generator.initialize(1024, random);
         return generator.generateKeyPair();
     }
 
