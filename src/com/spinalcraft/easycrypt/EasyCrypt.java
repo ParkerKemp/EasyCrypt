@@ -19,7 +19,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 public abstract class EasyCrypt {
-	public static enum Algorithm {RSA, AES};
+	public static final int RSA = 0, AES = 1;
 	
 	public KeyPair generateKeys() throws NoSuchAlgorithmException {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
@@ -60,7 +60,7 @@ public abstract class EasyCrypt {
         return encode(spec.getEncoded());
     }
     
-    public String encrypt(PublicKey key, String plaintext, Algorithm algorithm){
+    public String encrypt(PublicKey key, String plaintext, int algorithm){
         Cipher cipher;
 		try {
 			cipher = Cipher.getInstance(getAlgorithm(algorithm));
@@ -72,7 +72,7 @@ public abstract class EasyCrypt {
 		return null;
     }
 
-    public String decrypt(PrivateKey key, String ciphertext, Algorithm algorithm) {
+    public String decrypt(PrivateKey key, String ciphertext, int algorithm) {
         Cipher cipher;
 		try {
 			cipher = Cipher.getInstance(getAlgorithm(algorithm));
@@ -88,7 +88,7 @@ public abstract class EasyCrypt {
     
     protected abstract String encode(byte[] bytes);
     
-    private String getAlgorithm(Algorithm algo){
+    private String getAlgorithm(int algo){
     	switch(algo){
     	case RSA:
     		return "RSA/ECB/OAEPWithSHA1AndMGF1Padding";
