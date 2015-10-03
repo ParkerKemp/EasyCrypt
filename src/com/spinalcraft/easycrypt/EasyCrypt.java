@@ -3,7 +3,6 @@ package com.spinalcraft.easycrypt;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -39,7 +38,7 @@ public abstract class EasyCrypt {
 	}
 
     public PrivateKey loadPrivateKey(String key64) throws GeneralSecurityException {
-        byte[] clear = decode(key64);
+        byte[] clear = encode(key64);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(clear);
         KeyFactory fact = KeyFactory.getInstance("RSA");
         PrivateKey priv = fact.generatePrivate(keySpec);
@@ -48,14 +47,14 @@ public abstract class EasyCrypt {
     }
 
     public PublicKey loadPublicKey(String stored) throws GeneralSecurityException {
-        byte[] data = decode(stored);
+        byte[] data = encode(stored);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
         KeyFactory fact = KeyFactory.getInstance("RSA");
         return fact.generatePublic(spec);
     }
     
     public SecretKey loadSecretKey(String str){
-    	byte[] data = decode(str);
+    	byte[] data = encode(str);
     	return new SecretKeySpec(data, "AES");
     }
 
@@ -63,7 +62,7 @@ public abstract class EasyCrypt {
 //        KeyFactory fact = KeyFactory.getInstance("RSA");
 //        PKCS8EncodedKeySpec spec = fact.getKeySpec(priv, PKCS8EncodedKeySpec.class);
         byte[] packed = priv.getEncoded();
-        String key64 = encode(packed);
+        String key64 = decode(packed);
 
         Arrays.fill(packed, (byte) 0);
         return key64;
@@ -72,26 +71,24 @@ public abstract class EasyCrypt {
     public String stringFromPublicKey(PublicKey publ) throws GeneralSecurityException {
 //        KeyFactory fact = KeyFactory.getInstance("RSA");
 //        X509EncodedKeySpec spec = fact.getKeySpec(publ, X509EncodedKeySpec.class);
-        return encode(publ.getEncoded());
+        return decode(publ.getEncoded());
     }
     
     public String stringFromSecretKey(SecretKey secret){
     	byte[] packed = secret.getEncoded();
-    	String key64 = encode(packed);
+    	String key64 = decode(packed);
     	
     	Arrays.fill(packed, (byte) 0);
     	return key64;
     }
     
-    public byte[] encrypt(Key key, String plaintext, int algorithm){
+    public byte[] encryptMessage(SecretKey key, String plaintext){
         Cipher cipher;
 		try {
-			cipher = Cipher.getInstance(getAlgorithm(algorithm));
+			cipher = Cipher.getInstance(getAlgorithm(AES));
 	        cipher.init(Cipher.ENCRYPT_MODE, key);
 	        IvParameterSpec spec = cipher.getParameters().getParameterSpec(IvParameterSpec.class);
 	        byte[] iv = spec.getIV();
-	        System.out.println("IV Length: " + iv.length);
-	        System.out.println("IV: " + new String(iv));
 	        return concat(iv, cipher.doFinal(plaintext.getBytes()));
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException e) {
 			e.printStackTrace();
@@ -101,16 +98,14 @@ public abstract class EasyCrypt {
 		return null;
     }
 
-    public String decrypt(Key key, byte[] ciphertext, int algorithm) {
+    public String decryptMessage(SecretKey key, byte[] ciphertext) {
         Cipher cipher;
         byte[] iv = Arrays.copyOfRange(ciphertext, 0, 16);
         System.out.println("IV: " + new String(iv));
         byte[] encrypted = Arrays.copyOfRange(ciphertext, 16, ciphertext.length);
-        System.out.println("Ciphertext Length: " + ciphertext.length);
-        System.out.println("Encrypted Length: " + encrypted.length);
 		try {
 			IvParameterSpec initializationVector = new IvParameterSpec(iv);
-			cipher = Cipher.getInstance(getAlgorithm(algorithm));
+			cipher = Cipher.getInstance(getAlgorithm(AES));
 			cipher.init(Cipher.DECRYPT_MODE, key, initializationVector);
 	        return new String(cipher.doFinal(encrypted));
 	    } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
@@ -121,9 +116,34 @@ public abstract class EasyCrypt {
         return null;
     }
     
-    protected abstract byte[] decode(String str);
+    public byte[] encryptKey(PublicKey pub, SecretKey secret){
+    	Cipher cipher;
+    	try {
+    		cipher = Cipher.getInstance(getAlgorithm(RSA));
+        	cipher.init(Cipher.ENCRYPT_MODE, pub);
+        	return cipher.doFinal(secret.getEncoded());
+		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
+			e.printStackTrace();
+		}
+    	return null;
+    }
     
-    protected abstract String encode(byte[] bytes);
+    public SecretKey decryptKey(PrivateKey priv, byte[] keyCipher){
+    	Cipher cipher;
+    	try {
+			cipher = Cipher.getInstance(getAlgorithm(RSA));
+			cipher.init(Cipher.DECRYPT_MODE, priv);
+			byte[] decrypted = cipher.doFinal(keyCipher);
+			return new SecretKeySpec(decrypted, "AES");
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+			e.printStackTrace();
+		}
+    	return null;
+    }
+    
+    protected abstract String decode(byte[] bytes);
+    
+    protected abstract byte[] encode(String str);
     
 	private byte[] concat(byte[] a, byte[] b) {
 		int aLen = a.length;
