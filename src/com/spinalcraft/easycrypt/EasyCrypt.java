@@ -38,7 +38,7 @@ public abstract class EasyCrypt {
 	}
 
     public PrivateKey loadPrivateKey(String key64) throws GeneralSecurityException {
-        byte[] clear = encode(key64);
+        byte[] clear = decode(key64);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(clear);
         KeyFactory fact = KeyFactory.getInstance("RSA");
         PrivateKey priv = fact.generatePrivate(keySpec);
@@ -47,14 +47,14 @@ public abstract class EasyCrypt {
     }
 
     public PublicKey loadPublicKey(String stored) throws GeneralSecurityException {
-        byte[] data = encode(stored);
+        byte[] data = decode(stored);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
         KeyFactory fact = KeyFactory.getInstance("RSA");
         return fact.generatePublic(spec);
     }
     
     public SecretKey loadSecretKey(String str){
-    	byte[] data = encode(str);
+    	byte[] data = decode(str);
     	return new SecretKeySpec(data, "AES");
     }
 
@@ -62,7 +62,7 @@ public abstract class EasyCrypt {
 //        KeyFactory fact = KeyFactory.getInstance("RSA");
 //        PKCS8EncodedKeySpec spec = fact.getKeySpec(priv, PKCS8EncodedKeySpec.class);
         byte[] packed = priv.getEncoded();
-        String key64 = decode(packed);
+        String key64 = encode(packed);
 
         Arrays.fill(packed, (byte) 0);
         return key64;
@@ -71,12 +71,12 @@ public abstract class EasyCrypt {
     public String stringFromPublicKey(PublicKey publ) throws GeneralSecurityException {
 //        KeyFactory fact = KeyFactory.getInstance("RSA");
 //        X509EncodedKeySpec spec = fact.getKeySpec(publ, X509EncodedKeySpec.class);
-        return decode(publ.getEncoded());
+        return encode(publ.getEncoded());
     }
     
     public String stringFromSecretKey(SecretKey secret){
     	byte[] packed = secret.getEncoded();
-    	String key64 = decode(packed);
+    	String key64 = encode(packed);
     	
     	Arrays.fill(packed, (byte) 0);
     	return key64;
@@ -141,9 +141,9 @@ public abstract class EasyCrypt {
     	return null;
     }
     
-    protected abstract String decode(byte[] bytes);
+    protected abstract String encode(byte[] bytes);
     
-    protected abstract byte[] encode(String str);
+    protected abstract byte[] decode(String str);
     
 	private byte[] concat(byte[] a, byte[] b) {
 		int aLen = a.length;

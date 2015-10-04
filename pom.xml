@@ -1,27 +1,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>EasyCrypt</groupId>
+	<groupId>com.spinalcraft</groupId>
 	<artifactId>EasyCrypt</artifactId>
-	<version>1.0</version>
+	<version>1.0.1</version>
 	<build>
 		<finalName>EasyCrypt</finalName>
 		<sourceDirectory>src</sourceDirectory>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.3</version>
+				<version>2.3.2</version>
 				<configuration>
 					<source>1.7</source>
 					<target>1.7</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.3.1</version>
-				<configuration>
-					<outputDirectory>../../AndroidStudio/SpinalcraftManager/app/libs</outputDirectory>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -42,13 +34,20 @@
 								<excludes>
 								</excludes>
 							</artifactSet>
+							<outputFile>../../AndroidStudio/SpinalcraftManager/app/libs/EasyCrypt.jar</outputFile>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 		</plugins>
+		<extensions>
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-ssh</artifactId>
+				<version>1.0</version>
+			</extension>
+		</extensions>
 	</build>
-
 
 	<dependencies>
 		<dependency>
@@ -58,4 +57,14 @@
 			<scope>compile</scope>
 		</dependency>
 	</dependencies>
+	
+	<distributionManagement>
+		<repository>
+			<uniqueVersion>false</uniqueVersion>
+			<id>spinalcraft</id>
+			<name>Spinalcraft Repository</name>
+			<url>sftp://maven.spinalcraft.com/var/www/maven</url>
+			<layout>default</layout>
+		</repository>
+	</distributionManagement>
 </project>
