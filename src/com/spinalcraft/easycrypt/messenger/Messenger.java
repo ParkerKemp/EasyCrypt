@@ -6,11 +6,14 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.crypto.SecretKey;
+
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.spinalcraft.easycrypt.EasyCrypt;
 
 public abstract class Messenger {
 	public static boolean shouldShowDebug = false;
@@ -55,12 +58,12 @@ public abstract class Messenger {
 		}
 	}
 	
-	protected void sendEncrypted(PrintStream printer){
+	protected void sendEncrypted(PrintStream printer, SecretKey secretKey, EasyCrypt crypt){
 		headers.put("encrypted", "1");
 
 		message = "";
 		message += getHeaderSection();
-		message += getEncryptedBody();
+		message += getEncryptedBody(secretKey, crypt);
 		
 		printer.print(message);
 		System.out.println("Sent Message: " + message);
@@ -106,12 +109,12 @@ public abstract class Messenger {
 		return itemSection;
 	}
 	
-	private String getEncryptedBody(){
+	private String getEncryptedBody(SecretKey secretKey, EasyCrypt crypt){
 		JsonObject obj = new JsonObject();
 		for(String key : items.keySet()){
 			obj.addProperty(key, StringEscapeUtils.escapeJava(items.get(key)));
 		}
-		return obj.toString();
+		return crypt.encode(crypt.encryptMessage(secretKey, obj.toString()));
 	}
 	
 	private void parseHeaderSection(BufferedReader reader) throws IOException{
