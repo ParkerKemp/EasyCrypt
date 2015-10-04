@@ -25,10 +25,11 @@ import javax.crypto.spec.SecretKeySpec;
 
 public abstract class EasyCrypt {
 	public static final int RSA = 0, AES = 1;
+	public static final int EncryptionStrength = 1024;
 	
 	public KeyPair generateKeys() throws NoSuchAlgorithmException {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-        generator.initialize(1024);
+        generator.initialize(EncryptionStrength);
         return generator.generateKeyPair();
     }
 	
