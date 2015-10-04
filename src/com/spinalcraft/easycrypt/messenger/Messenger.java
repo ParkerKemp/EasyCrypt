@@ -8,6 +8,7 @@ import java.util.HashMap;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 public abstract class Messenger {
+	public static boolean shouldShowDebug = false;
 	private String message;
 	
 	private HashMap<String, String> items;
@@ -36,6 +37,9 @@ public abstract class Messenger {
 		}
 		
 		printer.print(message);
+		if(shouldShowDebug){
+			System.out.println("Sent Message: " + message);
+		}
 	}
 	
 	protected void receiveMessage(BufferedReader reader){
@@ -53,6 +57,10 @@ public abstract class Messenger {
 			}
 		} catch (NumberFormatException | IOException e) {
 			e.printStackTrace();
+		}
+		
+		if(shouldShowDebug){
+			System.out.println("Received Message: " + message);
 		}
 	}
 }
