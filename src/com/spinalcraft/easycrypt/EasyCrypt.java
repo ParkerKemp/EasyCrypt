@@ -47,8 +47,8 @@ public abstract class EasyCrypt {
         return priv;
     }
 
-    public PublicKey loadPublicKey(String stored) throws GeneralSecurityException {
-        byte[] data = decode(stored);
+    public PublicKey loadPublicKey(String key64) throws GeneralSecurityException {
+        byte[] data = decode(key64);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
         KeyFactory fact = KeyFactory.getInstance("RSA");
         return fact.generatePublic(spec);
