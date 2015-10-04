@@ -9,11 +9,20 @@ public class MessageSender extends Messenger{
 	}
 	
 	@Override
-	public void add(String key, String item){
-		super.add(key, item);
+	public void addItem(String key, String item){
+		super.addItem(key, item);
+	}
+	
+	@Override
+	public void addHeader(String key, String header){
+		super.addHeader(key, header);
 	}
 	
 	public void sendMessage(){
 		super.sendMessage(printer);
+	}
+	
+	public void sendEncrypted(){
+		
 	}
 }

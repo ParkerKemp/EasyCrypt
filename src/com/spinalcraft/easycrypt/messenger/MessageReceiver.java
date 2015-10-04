@@ -9,8 +9,13 @@ public class MessageReceiver extends Messenger{
 	}
 	
 	@Override
-	public String get(String key){
-		return super.get(key);
+	public String getItem(String key){
+		return super.getItem(key);
+	}
+	
+	@Override
+	public String getHeader(String key){
+		return super.getHeader(key);
 	}
 	
 	public void receiveMessage(){

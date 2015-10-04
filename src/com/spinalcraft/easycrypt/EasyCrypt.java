@@ -142,9 +142,9 @@ public abstract class EasyCrypt {
     	return null;
     }
     
-    protected abstract String encode(byte[] bytes);
+    public abstract String encode(byte[] bytes);
     
-    protected abstract byte[] decode(String str);
+    public abstract byte[] decode(String str);
     
 	private byte[] concat(byte[] a, byte[] b) {
 		int aLen = a.length;
