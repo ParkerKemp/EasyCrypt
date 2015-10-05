@@ -24,6 +24,7 @@ public abstract class Messenger {
 	
 	public Messenger(){
 		items = new HashMap<String, String>();
+		headers = new HashMap<String, String>();
 	}
 	
 	public String getMessage(){
