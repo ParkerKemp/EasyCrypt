@@ -1,15 +1,12 @@
 package com.spinalcraft.easycrypt.messenger;
 
-import java.io.BufferedReader;
-
-import javax.crypto.SecretKey;
-
+import java.net.Socket;
 import com.spinalcraft.easycrypt.EasyCrypt;
 
-public class MessageReceiver extends Messenger{
-	private BufferedReader reader;
-	public MessageReceiver(BufferedReader reader){
-		this.reader = reader;
+public abstract class MessageReceiver extends Messenger{
+
+	public MessageReceiver(Socket socket, EasyCrypt crypt) {
+		super(socket, crypt);
 	}
 	
 	@Override
@@ -22,17 +19,7 @@ public class MessageReceiver extends Messenger{
 		return super.getHeader(key);
 	}
 	
-	@Override
-	public boolean needsSecretKey(){
-		return super.needsSecretKey();
-	}
-	
 	public void receiveMessage(){
-		super.receiveMessage(reader);
-	}
-	
-	@Override
-	public void decrypt(SecretKey secretKey, EasyCrypt crypt){
-		super.decrypt(secretKey, crypt);
+		super.receiveMessage();
 	}
 }

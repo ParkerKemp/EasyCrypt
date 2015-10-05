@@ -155,7 +155,7 @@ public abstract class EasyCrypt {
     	case RSA:
     		return "RSA/ECB/OAEPWithSHA1AndMGF1Padding";
     	case AES:
-    		return "AES/CFB8/NoPadding";//"AES/CBC/PKCS5Padding";
+    		return "AES/CFB8/NoPadding";
     	default:
     		return "AES/CBC/PKCS5Padding";
     	}
