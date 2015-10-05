@@ -60,8 +60,6 @@ public abstract class EasyCrypt {
     }
 
     public String stringFromPrivateKey(PrivateKey priv) throws GeneralSecurityException {
-//        KeyFactory fact = KeyFactory.getInstance("RSA");
-//        PKCS8EncodedKeySpec spec = fact.getKeySpec(priv, PKCS8EncodedKeySpec.class);
         byte[] packed = priv.getEncoded();
         String key64 = encode(packed);
 
@@ -70,8 +68,6 @@ public abstract class EasyCrypt {
     }
 
     public String stringFromPublicKey(PublicKey publ) throws GeneralSecurityException {
-//        KeyFactory fact = KeyFactory.getInstance("RSA");
-//        X509EncodedKeySpec spec = fact.getKeySpec(publ, X509EncodedKeySpec.class);
         return encode(publ.getEncoded());
     }
     
@@ -102,7 +98,6 @@ public abstract class EasyCrypt {
     public String decryptMessage(SecretKey key, byte[] ciphertext) {
         Cipher cipher;
         byte[] iv = Arrays.copyOfRange(ciphertext, 0, 16);
-        System.out.println("IV: " + new String(iv));
         byte[] encrypted = Arrays.copyOfRange(ciphertext, 16, ciphertext.length);
 		try {
 			IvParameterSpec initializationVector = new IvParameterSpec(iv);

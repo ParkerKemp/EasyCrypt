@@ -22,6 +22,9 @@ public abstract class Messenger {
 	private HashMap<String, String> headers;
 	private HashMap<String, String> items;
 	
+	private boolean needsSecretKey = false;
+	private String lockedBody;
+	
 	public Messenger(){
 		items = new HashMap<String, String>();
 		headers = new HashMap<String, String>();
@@ -45,6 +48,10 @@ public abstract class Messenger {
 	
 	protected String getHeader(String key){
 		return headers.get(key);
+	}
+	
+	protected boolean needsSecretKey(){
+		return needsSecretKey;
 	}
 	
 	protected void sendMessage(PrintStream printer){
@@ -75,8 +82,9 @@ public abstract class Messenger {
 		String line = "";
 		try {
 			parseHeaderSection(reader);
-			if(headers.get("encrypted") == "1"){
-				parseEncryptedBody(reader);
+			if(headers.containsKey("encrypted") && headers.get("encrypted").equals("1")){
+				lockedBody = reader.readLine();
+				needsSecretKey = true;
 			}
 			else{
 				parseItemSection(reader);
@@ -90,6 +98,10 @@ public abstract class Messenger {
 		if(shouldShowDebug){
 			System.out.println("Received Message: " + message);
 		}
+	}
+	
+	protected void decrypt(SecretKey secretKey, EasyCrypt crypt){
+		parseEncryptedBody(secretKey, crypt);
 	}
 	
 	private String getHeaderSection(){
@@ -115,7 +127,7 @@ public abstract class Messenger {
 		for(String key : items.keySet()){
 			obj.addProperty(key, StringEscapeUtils.escapeJava(items.get(key)));
 		}
-		return crypt.encode(crypt.encryptMessage(secretKey, obj.toString()));
+		return crypt.encode(crypt.encryptMessage(secretKey, obj.toString())) + "\n";
 	}
 	
 	private void parseHeaderSection(BufferedReader reader) throws IOException{
@@ -144,17 +156,14 @@ public abstract class Messenger {
 		}
 	}
 	
-	private void parseEncryptedBody(BufferedReader reader){
-		try {
-			String body = reader.readLine();
-			message += body;
-			JsonParser parser = new JsonParser();
-			JsonObject obj = parser.parse(body).getAsJsonObject();
-			for(Map.Entry<String, JsonElement> entry : obj.entrySet()){
-				items.put(entry.getKey(), entry.getValue().getAsString());
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
+	private void parseEncryptedBody(SecretKey secretKey, EasyCrypt crypt){
+		message += lockedBody;
+		String json = crypt.decryptMessage(secretKey, crypt.decode(lockedBody));
+		JsonParser parser = new JsonParser();
+		JsonObject obj = parser.parse(json).getAsJsonObject();
+		for(Map.Entry<String, JsonElement> entry : obj.entrySet()){
+			items.put(entry.getKey(), entry.getValue().getAsString());
 		}
+		needsSecretKey = false;
 	}
 }
