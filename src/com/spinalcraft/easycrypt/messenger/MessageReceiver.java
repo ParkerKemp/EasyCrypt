@@ -19,7 +19,7 @@ public abstract class MessageReceiver extends Messenger{
 		return super.getHeader(key);
 	}
 	
-	public void receiveMessage(){
-		super.receiveMessage();
+	public boolean receiveMessage(){
+		return super.receiveMessage();
 	}
 }

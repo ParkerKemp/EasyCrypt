@@ -28,8 +28,8 @@ public abstract class Messenger {
 	private BufferedReader reader;
 	private PrintStream printer;
 	
-	private static int authExpire = 300;
-	private static int lastSent = 0;
+	private static long authExpire = 300;
+	private static long lastSent = 0;
 	
 	public Messenger(Socket socket, EasyCrypt crypt){
 		this.crypt = crypt;
@@ -99,24 +99,32 @@ public abstract class Messenger {
 		return true;
 	}
 	
-	protected void receiveMessage(){
+	protected boolean receiveMessage(){
 		message = "";
 		String line = "";
 		try {
 			parseHeaderSection();
 			String identifier = headers.get("id");
+			SecretKey secretKey = getSecretKeyForIdentifier(identifier);
 			if(headers.containsKey("encrypted") && headers.get("encrypted").equals("1")){
+				if(secretKey == null)
+					return false;
 				parseEncryptedBody(getSecretKeyForIdentifier(identifier));
 			}
 			else if(headers.containsKey("handshake") && headers.get("handshake").equals("1")){
+				if(secretKey == null)
+					return false;
 				if(parseHandshakeRequest(getSecretKeyForIdentifier(identifier), getLastTransmitTimeForIdentifier(identifier))){
-					receiveMessage();
+					return receiveMessage();
 				}
-				return;
+				else{
+					return false;
+				}
 			}
 			else{
 				parseItemSection();
 			}
+			return true;
 		} catch (NumberFormatException e){
 			System.out.println("Invalid message header: " + line);
 		} catch (IOException e) {
@@ -126,11 +134,12 @@ public abstract class Messenger {
 		if(shouldShowDebug){
 			System.out.println("Received Message: " + message);
 		}
+		return false;
 	}
 	
 	protected abstract SecretKey getSecretKeyForIdentifier(String identifier);
 	
-	protected abstract int getLastTransmitTimeForIdentifier(String identifier);
+	protected abstract long getLastTransmitTimeForIdentifier(String identifier);
 	
 	private String getHeaderSection(){
 		String headerSection = "";
@@ -208,17 +217,23 @@ public abstract class Messenger {
 		obj.addProperty("timestamp", timestamp);
 		handshake += crypt.encode(crypt.encryptMessage(secretKey, obj.toString())) + "\n";
 		printer.print(handshake);
+		if(shouldShowDebug){
+			System.out.println("Sending handshake request: " + handshake);
+		}
 		
 		return receiveHandshakeResponse(secretKey, timestamp);
 	}
 	
 	private boolean parseHandshakeRequest(SecretKey secretKey, long lastTransmit) throws IOException{
 		String request = reader.readLine();
+		if(shouldShowDebug){
+			System.out.println("Received handshake request: " + request);
+		}
 		String json = crypt.decryptMessage(secretKey, crypt.decode(request));
 		JsonParser parser = new JsonParser();
 		JsonObject obj = parser.parse(json).getAsJsonObject();
 		long timestamp = obj.get("timestamp").getAsLong();
-		if(timestamp <= lastTransmit){
+		if(timestamp <= lastTransmit || lastTransmit == -1){
 			return false;
 		}
 		sendHandshakeResponse(secretKey, obj.get("timestamp").getAsLong());
@@ -231,10 +246,16 @@ public abstract class Messenger {
 		obj.addProperty("timestamp", timestamp);
 		String response = crypt.encode(crypt.encryptMessage(secretKey, obj.toString())) + "\n";
 		printer.print(response);
+		if(shouldShowDebug){
+			System.out.println("Sending handshake response: " + response);
+		}
 	}
 	
 	private boolean receiveHandshakeResponse(SecretKey secretKey, long timestamp) throws IOException{
 		String response = reader.readLine();
+		if(shouldShowDebug){
+			System.out.println("Received handshake response: " + response);
+		}
 		String json = crypt.decryptMessage(secretKey, crypt.decode(response));
 		JsonParser parser= new JsonParser();
 		JsonObject obj = parser.parse(json).getAsJsonObject();
