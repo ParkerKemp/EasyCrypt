@@ -30,6 +30,8 @@ public abstract class Messenger {
 	
 	private static long authExpire = 300;
 	private static long lastSent = 0;
+
+	private static boolean shouldInitiateHandshakes = true;
 	
 	public Messenger(Socket socket, EasyCrypt crypt){
 		this.crypt = crypt;
@@ -71,6 +73,10 @@ public abstract class Messenger {
 		authExpire = expiration;
 	}
 	
+	public static void setShouldInitiateHandshakes(boolean should){
+		shouldInitiateHandshakes = should;
+	}
+	
 	protected void sendMessage(){
 		message = "";
 		
@@ -84,8 +90,10 @@ public abstract class Messenger {
 	}
 	
 	protected boolean sendEncrypted(SecretKey secretKey) throws IOException{
-		if(shouldSendHandshake() && !sendHandshakeRequest(secretKey))
+		if(shouldSendHandshake() && !sendHandshakeRequest(secretKey)){
+			System.out.println("Handshake failed!");
 			return false;
+		}
 		headers.put("encrypted", "1");
 
 		message = "";
@@ -124,17 +132,18 @@ public abstract class Messenger {
 			else{
 				parseItemSection();
 			}
-			return true;
 		} catch (NumberFormatException e){
 			System.out.println("Invalid message header: " + line);
+			return false;
 		} catch (IOException e) {
 			e.printStackTrace();
+			return false;
 		}
 		
 		if(shouldShowDebug){
 			System.out.println("Received Message: " + message);
 		}
-		return false;
+		return true;
 	}
 	
 	protected abstract SecretKey getSecretKeyForIdentifier(String identifier);
@@ -205,7 +214,7 @@ public abstract class Messenger {
 	}
 	
 	private boolean shouldSendHandshake(){
-		return (System.currentTimeMillis() / 1000) - lastSent > authExpire;
+		return shouldInitiateHandshakes && (System.currentTimeMillis() / 1000) - lastSent > authExpire;
 	}
 	
 	private boolean sendHandshakeRequest(SecretKey secretKey) throws IOException{
@@ -234,6 +243,8 @@ public abstract class Messenger {
 		JsonObject obj = parser.parse(json).getAsJsonObject();
 		long timestamp = obj.get("timestamp").getAsLong();
 		if(timestamp <= lastTransmit || lastTransmit == -1){
+			System.out.println("Declining handshake!");
+			declineHandshake();
 			return false;
 		}
 		sendHandshakeResponse(secretKey, obj.get("timestamp").getAsLong());
@@ -253,6 +264,10 @@ public abstract class Messenger {
 	
 	private boolean receiveHandshakeResponse(SecretKey secretKey, long timestamp) throws IOException{
 		String response = reader.readLine();
+		if(response.equals("DECLINE")){
+			System.out.println("Handshake was declined!");
+			return false;
+		}
 		if(shouldShowDebug){
 			System.out.println("Received handshake response: " + response);
 		}
@@ -260,5 +275,9 @@ public abstract class Messenger {
 		JsonParser parser= new JsonParser();
 		JsonObject obj = parser.parse(json).getAsJsonObject();
 		return obj.get("timestamp").getAsLong() == timestamp && obj.get("Hello").getAsString().equals("Goodbye");
+	}
+	
+	private void declineHandshake(){
+		printer.print("DECLINE\n");
 	}
 }
