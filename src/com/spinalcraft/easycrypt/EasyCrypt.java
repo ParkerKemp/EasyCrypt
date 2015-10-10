@@ -1,5 +1,6 @@
 package com.spinalcraft.easycrypt;
 
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -9,6 +10,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -36,6 +38,12 @@ public abstract class EasyCrypt {
 	public SecretKey generateSecretKey() throws NoSuchAlgorithmException{
 		KeyGenerator generator = KeyGenerator.getInstance("AES");
 		return generator.generateKey();
+	}
+	
+	public String randomString(){
+		SecureRandom random = new SecureRandom();
+
+		return new BigInteger(130, random).toString(32);
 	}
 
     public PrivateKey loadPrivateKey(String key64) throws GeneralSecurityException {
