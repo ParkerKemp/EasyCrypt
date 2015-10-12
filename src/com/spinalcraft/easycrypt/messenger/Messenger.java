@@ -28,11 +28,6 @@ public abstract class Messenger {
 	private BufferedReader reader;
 	private PrintStream printer;
 	
-	private static long authExpire = 300;
-	private static long lastSent = 0;
-
-	private static boolean shouldInitiateHandshakes = true;
-	
 	public Messenger(Socket socket, EasyCrypt crypt){
 		this.crypt = crypt;
 		items = new HashMap<String, String>();
@@ -69,14 +64,6 @@ public abstract class Messenger {
 		return headers.get(key);
 	}
 	
-	public static void setAuthExpiration(int expiration){
-		authExpire = expiration;
-	}
-	
-	public static void setShouldInitiateHandshakes(boolean should){
-		shouldInitiateHandshakes = should;
-	}
-	
 	protected void sendMessage(){
 		message = "";
 		
@@ -90,10 +77,6 @@ public abstract class Messenger {
 	}
 	
 	protected boolean sendEncrypted(SecretKey secretKey) throws IOException{
-		if(shouldSendHandshake() && !sendHandshakeRequest(secretKey)){
-			System.out.println("Handshake failed!");
-			return false;
-		}
 		headers.put("encrypted", "1");
 
 		message = "";
@@ -108,26 +91,18 @@ public abstract class Messenger {
 	}
 	
 	protected boolean receiveMessage(){
+		return receiveMessage(null);
+	}
+	
+	protected boolean receiveMessage(SecretKey secretKey){
 		message = "";
 		String line = "";
 		try {
 			parseHeaderSection();
-			String identifier = headers.get("id");
-			SecretKey secretKey = getSecretKeyForIdentifier(identifier);
 			if(headers.containsKey("encrypted") && headers.get("encrypted").equals("1")){
 				if(secretKey == null)
 					return false;
-				parseEncryptedBody(getSecretKeyForIdentifier(identifier));
-			}
-			else if(headers.containsKey("handshake") && headers.get("handshake").equals("1")){
-				if(secretKey == null)
-					return false;
-				if(parseHandshakeRequest(getSecretKeyForIdentifier(identifier), getLastTransmitTimeForIdentifier(identifier))){
-					return receiveMessage();
-				}
-				else{
-					return false;
-				}
+				parseEncryptedBody(secretKey);
 			}
 			else{
 				parseItemSection();
@@ -145,10 +120,6 @@ public abstract class Messenger {
 		}
 		return true;
 	}
-	
-	protected abstract SecretKey getSecretKeyForIdentifier(String identifier);
-	
-	protected abstract long getLastTransmitTimeForIdentifier(String identifier);
 	
 	private String getHeaderSection(){
 		String headerSection = "";
@@ -211,73 +182,5 @@ public abstract class Messenger {
 		for(Map.Entry<String, JsonElement> entry : obj.entrySet()){
 			items.put(entry.getKey(), entry.getValue().getAsString());
 		}
-	}
-	
-	private boolean shouldSendHandshake(){
-		return shouldInitiateHandshakes && (System.currentTimeMillis() / 1000) - lastSent > authExpire;
-	}
-	
-	private boolean sendHandshakeRequest(SecretKey secretKey) throws IOException{
-		long timestamp = System.currentTimeMillis() / 1000;
-		String handshake = "";
-		handshake += "2\nhandshake:1\nid:" + headers.get("id") + "\n";
-		JsonObject obj = new JsonObject();
-		obj.addProperty("id", headers.get("id"));
-		obj.addProperty("timestamp", timestamp);
-		handshake += crypt.encode(crypt.encryptMessage(secretKey, obj.toString())) + "\n";
-		printer.print(handshake);
-		if(shouldShowDebug){
-			System.out.println("Sending handshake request: " + handshake);
-		}
-		
-		return receiveHandshakeResponse(secretKey, timestamp);
-	}
-	
-	private boolean parseHandshakeRequest(SecretKey secretKey, long lastTransmit) throws IOException{
-		String request = reader.readLine();
-		if(shouldShowDebug){
-			System.out.println("Received handshake request: " + request);
-		}
-		String json = crypt.decryptMessage(secretKey, crypt.decode(request));
-		JsonParser parser = new JsonParser();
-		JsonObject obj = parser.parse(json).getAsJsonObject();
-		long timestamp = obj.get("timestamp").getAsLong();
-		if(timestamp <= lastTransmit || lastTransmit == -1){
-			System.out.println("Declining handshake!");
-			declineHandshake();
-			return false;
-		}
-		sendHandshakeResponse(secretKey, obj.get("timestamp").getAsLong());
-		return true;
-	}
-	
-	private void sendHandshakeResponse(SecretKey secretKey, long timestamp){
-		JsonObject obj = new JsonObject();
-		obj.addProperty("Hello", "Goodbye");
-		obj.addProperty("timestamp", timestamp);
-		String response = crypt.encode(crypt.encryptMessage(secretKey, obj.toString())) + "\n";
-		printer.print(response);
-		if(shouldShowDebug){
-			System.out.println("Sending handshake response: " + response);
-		}
-	}
-	
-	private boolean receiveHandshakeResponse(SecretKey secretKey, long timestamp) throws IOException{
-		String response = reader.readLine();
-		if(response.equals("DECLINE")){
-			System.out.println("Handshake was declined!");
-			return false;
-		}
-		if(shouldShowDebug){
-			System.out.println("Received handshake response: " + response);
-		}
-		String json = crypt.decryptMessage(secretKey, crypt.decode(response));
-		JsonParser parser= new JsonParser();
-		JsonObject obj = parser.parse(json).getAsJsonObject();
-		return obj.get("timestamp").getAsLong() == timestamp && obj.get("Hello").getAsString().equals("Goodbye");
-	}
-	
-	private void declineHandshake(){
-		printer.print("DECLINE\n");
 	}
 }

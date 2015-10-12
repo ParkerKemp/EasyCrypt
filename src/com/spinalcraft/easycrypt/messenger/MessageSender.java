@@ -35,14 +35,4 @@ public abstract class MessageSender extends Messenger{
 	public boolean sendEncrypted(SecretKey secretKey) throws IOException{
 		return super.sendEncrypted(secretKey);
 	}
-
-	@Override
-	protected SecretKey getSecretKeyForIdentifier(String identifier){
-		return null;
-	}
-
-	@Override
-	protected long getLastTransmitTimeForIdentifier(String identifier) {
-		return 0;
-	}
 }
