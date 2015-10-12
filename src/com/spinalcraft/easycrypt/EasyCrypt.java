@@ -64,7 +64,7 @@ public abstract class EasyCrypt {
     
     public SecretKey loadSecretKey(String str){
     	byte[] data = decode(str);
-    	return new SecretKeySpec(data, "AES");
+    	return new SecretKeySpec(data, 0, Math.min(data.length, 16), "AES");
     }
 
     public String stringFromPrivateKey(PrivateKey priv) throws GeneralSecurityException {
