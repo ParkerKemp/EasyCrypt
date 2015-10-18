@@ -180,7 +180,7 @@ public abstract class Messenger {
 		JsonParser parser = new JsonParser();
 		JsonObject obj = parser.parse(json).getAsJsonObject();
 		for(Map.Entry<String, JsonElement> entry : obj.entrySet()){
-			items.put(entry.getKey(), entry.getValue().getAsString());
+			items.put(entry.getKey(), StringEscapeUtils.unescapeJava(entry.getValue().getAsString()));
 		}
 	}
 }
