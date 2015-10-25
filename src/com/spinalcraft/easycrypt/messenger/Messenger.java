@@ -156,7 +156,10 @@ public abstract class Messenger {
 			line = reader.readLine();
 			message += line + "\n";
 			String tokens[] = line.split(":");
-			headers.put(tokens[0], StringEscapeUtils.unescapeJava(tokens[1]));
+			if(tokens.length == 2)
+				headers.put(tokens[0], StringEscapeUtils.unescapeJava(tokens[1]));
+			else if(tokens.length == 1)
+				headers.put(tokens[0], null);
 		}
 	}
 	
@@ -169,7 +172,10 @@ public abstract class Messenger {
 			line = reader.readLine();
 			message += line + "\n";
 			String tokens[] = line.split(":");
-			items.put(tokens[0], StringEscapeUtils.unescapeJava(tokens[1]));
+			if(tokens.length == 2)
+				items.put(tokens[0], StringEscapeUtils.unescapeJava(tokens[1]));
+			else if(tokens.length == 1)
+				items.put(tokens[0], null);
 		}
 	}
 	
